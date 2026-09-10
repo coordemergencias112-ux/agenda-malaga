@@ -3,8 +3,8 @@
 <head>
 <meta charset="utf-8">
 <meta name="viewport" content="width=device-width, initial-scale=1, viewport-fit=cover">
-<title>Agenda viaria de Málaga · cortes de carretera y eventos</title>
-<meta name="description" content="Calendario público de cortes de carretera, pruebas deportivas y eventos con afección al tráfico en la provincia de Málaga.">
+<title>Agenda de eventos de Málaga</title>
+<meta name="description" content="Calendario público de eventos de la provincia de Málaga: fiestas, música, ferias, romerías, cultura, deporte y cortes de carretera.">
 <meta name="theme-color" content="#16304f">
 <link rel="manifest" href="manifest.webmanifest">
 <link rel="stylesheet" href="https://unpkg.com/leaflet@1.9.4/dist/leaflet.css">
@@ -18,7 +18,6 @@
     --shadow: 0 1px 2px rgba(16,24,32,.05), 0 4px 12px rgba(16,24,32,.06);
     --radius-lg:14px; --radius-md:10px; --radius-sm:7px;
     --font-ui: -apple-system, "Segoe UI", Roboto, "Helvetica Neue", Arial, sans-serif;
-    --cat: var(--accent);
   }
   @media (prefers-color-scheme: dark){
     :root:not([data-theme="light"]){
@@ -35,62 +34,44 @@
   header.page{ text-align:center; margin-bottom:18px; }
   header.page h1{ font-size:1.4rem; margin:0 0 4px; }
   header.page p{ margin:0; color:var(--ink-soft); font-size:.9rem; }
-  .bar{
-    display:flex; flex-wrap:wrap; gap:10px; align-items:center; justify-content:center;
-    background:var(--surface); border:1px solid var(--border); border-radius:var(--radius-lg);
-    padding:12px 14px; box-shadow:var(--shadow); margin-bottom:16px;
-  }
+  .bar{ display:flex; flex-wrap:wrap; gap:10px; align-items:center; justify-content:center; background:var(--surface); border:1px solid var(--border); border-radius:var(--radius-lg); padding:12px 14px; box-shadow:var(--shadow); margin-bottom:16px; }
   .bar .seg{ display:flex; border:1px solid var(--border); border-radius:var(--radius-sm); overflow:hidden; }
   .bar .seg button{ border:0; background:var(--surface); color:var(--ink-soft); padding:7px 14px; font-size:.85rem; cursor:pointer; font-family:inherit; }
   .bar .seg button.on{ background:var(--accent-strong); color:#fff; }
-  .bar select, .bar input{
-    padding:7px 10px; border:1px solid var(--border); border-radius:var(--radius-sm);
-    background:var(--paper); color:var(--ink); font-size:.85rem; font-family:inherit; max-width:180px;
-  }
+  .bar select, .bar input[type=search]{ padding:7px 10px; border:1px solid var(--border); border-radius:var(--radius-sm); background:var(--paper); color:var(--ink); font-size:.85rem; font-family:inherit; max-width:190px; }
+  .bar label.tf{ display:flex; align-items:center; gap:6px; font-size:.82rem; color:var(--ink-soft); }
   .navmonth{ display:flex; align-items:center; gap:12px; justify-content:center; margin-bottom:12px; }
   .navmonth button{ border:1px solid var(--border); background:var(--surface); color:var(--ink); border-radius:var(--radius-sm); width:34px; height:34px; font-size:1rem; cursor:pointer; }
   .navmonth h2{ font-size:1.05rem; margin:0; text-transform:capitalize; min-width:200px; text-align:center; }
 
   .cal{ display:grid; grid-template-columns:repeat(7,1fr); gap:6px; }
   .cal .dow{ font-size:.72rem; text-transform:uppercase; letter-spacing:.05em; color:var(--ink-faint); text-align:center; padding:4px 0; }
-  .cal .cell{
-    background:var(--surface); border:1px solid var(--border); border-radius:var(--radius-sm);
-    min-height:96px; padding:5px 5px 6px; display:flex; flex-direction:column; gap:3px;
-  }
+  .cal .cell{ background:var(--surface); border:1px solid var(--border); border-radius:var(--radius-sm); min-height:96px; padding:5px 5px 6px; display:flex; flex-direction:column; gap:3px; }
   .cal .cell.dim{ opacity:.4; }
   .cal .cell .n{ font-size:.78rem; color:var(--ink-soft); font-weight:600; align-self:flex-end; }
   .cal .cell.today .n{ background:var(--accent-strong); color:#fff; border-radius:999px; width:22px; height:22px; display:grid; place-items:center; }
-  .chip{
-    display:flex; align-items:center; gap:4px; font-size:.72rem; line-height:1.2;
-    background:var(--accent-soft); color:var(--ink); border-radius:5px; padding:3px 5px;
-    cursor:pointer; text-align:left; border:0; font-family:inherit; width:100%;
-    white-space:nowrap; overflow:hidden; text-overflow:ellipsis;
-  }
+  .chip{ display:flex; align-items:center; gap:4px; font-size:.72rem; line-height:1.2; background:var(--accent-soft); color:var(--ink); border-radius:5px; padding:3px 5px; cursor:pointer; text-align:left; border:0; font-family:inherit; width:100%; white-space:nowrap; overflow:hidden; text-overflow:ellipsis; }
   .chip.cancelado{ text-decoration:line-through; opacity:.6; }
   .chip .b{ width:6px; height:6px; border-radius:50%; flex:none; }
   .b.previsto{ background:#2f6fed; } .b.activo{ background:var(--warn); }
   .b.finalizado{ background:var(--ink-faint); } .b.cancelado{ background:var(--danger); }
   .more{ font-size:.7rem; color:var(--ink-faint); cursor:pointer; }
-  @media (max-width:640px){
-    .cal .cell{ min-height:64px; }
-    .chip span.tt{ display:none; }
-  }
+  @media (max-width:640px){ .cal .cell{ min-height:64px; } .chip span.tt{ display:none; } }
 
   .list .day{ font-size:.8rem; font-weight:700; color:var(--ink-soft); margin:18px 0 8px; text-transform:capitalize; }
-  .card{
-    background:var(--surface); border:1px solid var(--border); border-radius:var(--radius-md);
-    padding:12px 14px; box-shadow:var(--shadow); margin-bottom:8px; cursor:pointer;
-    display:flex; gap:12px; align-items:flex-start;
-  }
+  .card{ background:var(--surface); border:1px solid var(--border); border-radius:var(--radius-md); padding:12px 14px; box-shadow:var(--shadow); margin-bottom:8px; cursor:pointer; display:flex; gap:12px; align-items:flex-start; }
   .card:hover{ border-color:var(--accent); }
   .card .ico{ font-size:1.4rem; }
   .card h3{ margin:0 0 3px; font-size:.98rem; }
   .card .meta{ font-size:.8rem; color:var(--ink-soft); }
-  .badge{ font-size:.66rem; font-weight:700; border-radius:999px; padding:2px 8px; letter-spacing:.02em; border:1px solid var(--border); }
+  .badge{ font-size:.66rem; font-weight:700; border-radius:999px; padding:2px 8px; letter-spacing:.02em; border:1px solid var(--border); white-space:nowrap; }
   .badge.previsto{ color:#2f6fed; border-color:#2f6fed; }
   .badge.activo{ color:var(--warn); border-color:var(--warn); }
   .badge.finalizado{ color:var(--ink-faint); }
   .badge.cancelado{ color:var(--danger); border-color:var(--danger); }
+  .badge.free{ color:var(--ok); border-color:var(--ok); }
+  .badge.paid{ color:var(--ink-soft); }
+  .badge.traf{ color:var(--warn); border-color:var(--warn); }
 
   .empty{ text-align:center; color:var(--ink-faint); padding:50px 20px; }
 
@@ -101,12 +82,16 @@
   .modal .mhead h2{ margin:0; font-size:1.1rem; flex:1; }
   .modal .mhead button{ border:0; background:transparent; font-size:1.3rem; color:var(--ink-soft); cursor:pointer; line-height:1; }
   .modal .mbody{ padding:14px 18px 20px; }
-  .modal .kv{ font-size:.85rem; color:var(--ink-soft); margin:2px 0; }
+  .modal .cartel{ width:100%; max-height:260px; object-fit:cover; border-radius:var(--radius-md); margin-bottom:12px; }
+  .modal .badges{ display:flex; flex-wrap:wrap; gap:6px; margin-bottom:10px; }
+  .modal .kv{ font-size:.85rem; color:var(--ink-soft); margin:3px 0; }
+  .modal .kv b{ color:var(--ink); font-weight:600; }
   .modal .desc{ font-size:.9rem; margin:12px 0; white-space:pre-wrap; }
   #dmap{ height:260px; border:1px solid var(--border); border-radius:var(--radius-md); margin:12px 0; }
   table.tr{ width:100%; border-collapse:collapse; font-size:.82rem; margin-top:6px; }
   table.tr th{ text-align:left; font-size:.7rem; text-transform:uppercase; letter-spacing:.04em; color:var(--ink-faint); padding:5px 6px; }
   table.tr td{ padding:6px 6px; border-top:1px solid var(--border); }
+  h4.blk{ font-size:.82rem; text-transform:uppercase; letter-spacing:.04em; color:var(--ink-faint); margin:16px 0 4px; }
   a.ext{ color:var(--accent); font-size:.85rem; }
   footer.page{ text-align:center; color:var(--ink-faint); font-size:.75rem; margin-top:40px; }
 </style>
@@ -114,8 +99,8 @@
 <body>
 <div class="wrap">
   <header class="page">
-    <h1>Agenda viaria de Málaga</h1>
-    <p>Cortes de carretera, pruebas deportivas y eventos con afección al tráfico en la provincia · <span id="updated">cargando…</span></p>
+    <h1>Agenda de eventos de Málaga</h1>
+    <p>Fiestas, música, ferias, romerías, cultura, deporte y cortes de carretera en la provincia · <span id="updated">cargando…</span></p>
   </header>
 
   <div class="bar">
@@ -127,6 +112,7 @@
     <select id="f-comarca"><option value="">Toda la provincia</option></select>
     <select id="f-muni"><option value="">Todos los municipios</option></select>
     <input id="f-q" type="search" placeholder="Buscar…">
+    <label class="tf"><input type="checkbox" id="f-traf"> Solo con corte de tráfico</label>
   </div>
 
   <div id="view-cal">
@@ -142,7 +128,7 @@
 
   <footer class="page">
     Coordinación de Emergencias 112 · Provincia de Málaga<br>
-    Información orientativa. Ante cualquier duda, consulte el bando municipal o el organismo responsable.
+    Información orientativa. Confirme siempre con el organizador o el bando municipal.
   </footer>
 </div>
 
@@ -163,8 +149,8 @@ import { getDatabase, ref, onValue } from "https://www.gstatic.com/firebasejs/10
 
 /* Config pública del proyecto Portal 112 — NO es un secreto (va en código
    público). La seguridad la ponen las Reglas de la base de datos: la ruta
-   agenda/eventos tiene lectura abierta (.read: true) y escritura solo con
-   sesión (.write: auth != null). Este visor solo lee. */
+   agenda/eventos tiene lectura abierta y escritura solo con sesión.
+   Este visor solo lee. */
 const firebaseConfig = {
   apiKey: "AIzaSyCzdrnL6qWbG9OHPiQV43mJvgH9i56PkVQ",
   authDomain: "portal-112-b1754.firebaseapp.com",
@@ -181,28 +167,32 @@ const COMARCA = {}; MUNICIPIOS.forEach(m => COMARCA[m[0]] = m[1]);
 const COMARCAS = [...new Set(MUNICIPIOS.map(m => m[1]))];
 
 const CATEGORIAS = {
-  prueba_deportiva:["Prueba deportiva","🚴"], obras:["Obras","🚧"], corte_programado:["Corte programado","⛔"],
-  acto_publico:["Acto público / feria","🎪"], procesion:["Procesión / cabalgata","✝️"],
-  manifestacion:["Manifestación","📣"], meteo:["Meteorología / incidencia","🌧️"], otro:["Otro","📌"]
+  musica:["Música / concierto","🎵"], festival:["Festival","🎉"], feria:["Feria / verbena","🎡"],
+  romeria:["Romería / procesión","⛪"], cultural:["Cultural","🎭"], tradicion:["Fiesta popular","🪅"],
+  gastronomico:["Gastronómico","🍤"], deportivo:["Deportivo","🏅"], prueba_deportiva:["Prueba deportiva en vía pública","🚴"],
+  institucional:["Institucional","🏛️"], mercado:["Mercado / feria comercial","🛍️"],
+  obras:["Obras / corte de carretera","🚧"], aviso:["Aviso / incidencia","⚠️"], otro:["Otro","📌"]
 };
 const ESTADOS = { previsto:"Previsto", activo:"En curso", finalizado:"Finalizado", cancelado:"Cancelado" };
+const ENTRADAS = { gratuito:"Entrada libre", entrada:"Con entrada", invitacion:"Con invitación / inscripción" };
+const AMBITOS = { municipal:"Municipal", comarcal:"Comarcal", provincial:"Provincial" };
 const MALAGA_CENTER = [36.72, -4.55];
 
 const $ = (s, r) => (r||document).querySelector(s);
 const esc = s => (s==null?'':String(s)).replace(/[&<>"']/g, c => ({'&':'&amp;','<':'&lt;','>':'&gt;','"':'&quot;',"'":'&#39;'}[c]));
-const LS = 'agenda-malaga-v1';
+const LS = 'agenda-malaga-v2';
 
 let EVENTOS = [];
 let dmap = null;
 const now = new Date();
 let ym = { y: now.getFullYear(), m: now.getMonth() };
-let state = { view:'cal', cat:'', comarca:'', muni:'', q:'' };
+let state = { view:'cal', cat:'', comarca:'', muni:'', q:'', soloTraf:false };
 try { Object.assign(state, JSON.parse(localStorage.getItem(LS)||'{}')); } catch(e){}
 function persist(){ try { localStorage.setItem(LS, JSON.stringify(state)); } catch(e){} }
 
 /* ---------- fechas ---------- */
 const dkey = d => `${d.getFullYear()}-${String(d.getMonth()+1).padStart(2,'0')}-${String(d.getDate()).padStart(2,'0')}`;
-function evDays(ev){ // set de 'YYYY-MM-DD' que ocupa el evento
+function evDays(ev){
   const a = (ev.inicio||'').slice(0,10); if(!a) return [];
   const b = (ev.fin||ev.inicio||'').slice(0,10) || a;
   const out = []; let d = new Date(a+'T00:00'), end = new Date(b+'T00:00');
@@ -211,6 +201,7 @@ function evDays(ev){ // set de 'YYYY-MM-DD' que ocupa el evento
   while(d <= end && guard++ < 400){ out.push(dkey(d)); d.setDate(d.getDate()+1); }
   return out;
 }
+const cap = s => s.charAt(0).toUpperCase() + s.slice(1);
 function fmtRange(ev){
   const di = ev.inicio ? new Date(ev.inicio) : null;
   const df = ev.fin ? new Date(ev.fin) : null;
@@ -218,20 +209,24 @@ function fmtRange(ev){
   const optD = { weekday:'long', day:'numeric', month:'long' };
   const optT = { hour:'2-digit', minute:'2-digit' };
   const sameDay = df && di.toDateString() === df.toDateString();
+  if(ev.todoElDia){
+    if(df && !sameDay) return cap(di.toLocaleDateString('es-ES', optD)) + ' → ' + cap(df.toLocaleDateString('es-ES', optD));
+    return cap(di.toLocaleDateString('es-ES', optD)) + ' · todo el día';
+  }
   if(!df) return cap(di.toLocaleDateString('es-ES', optD)) + ' · ' + di.toLocaleTimeString('es-ES', optT);
   if(sameDay) return cap(di.toLocaleDateString('es-ES', optD)) + ' · ' + di.toLocaleTimeString('es-ES', optT) + '–' + df.toLocaleTimeString('es-ES', optT);
   return cap(di.toLocaleDateString('es-ES', optD)) + ' → ' + cap(df.toLocaleDateString('es-ES', optD));
 }
-const cap = s => s.charAt(0).toUpperCase() + s.slice(1);
 
 /* ---------- filtros ---------- */
 function pass(ev){
   if(state.cat && ev.categoria !== state.cat) return false;
+  if(state.soloTraf && !ev.afeccionTrafico) return false;
   const munis = ev.municipios || [];
   if(state.comarca && !munis.some(m => COMARCA[m] === state.comarca)) return false;
   if(state.muni && !munis.includes(state.muni)) return false;
   if(state.q){
-    const hay = (ev.titulo+' '+(ev.descripcion||'')+' '+munis.join(' ')+' '+(ev.tramos||[]).map(t=>t.via+' '+t.municipio).join(' ')).toLowerCase();
+    const hay = (ev.titulo+' '+(ev.descripcion||'')+' '+(ev.lugar||'')+' '+(ev.organizador||'')+' '+munis.join(' ')+' '+(ev.tramos||[]).map(t=>t.via+' '+t.municipio).join(' ')).toLowerCase();
     if(!hay.includes(state.q.toLowerCase())) return false;
   }
   return true;
@@ -254,11 +249,12 @@ onValue(ref(db, 'agenda/eventos'), snap => {
   COMARCAS.forEach(c => fco.insertAdjacentHTML('beforeend', `<option value="${esc(c)}">${esc(c)}</option>`));
   const fm = $('#f-muni');
   MUNICIPIOS.map(m=>m[0]).sort((a,b)=>a.localeCompare(b,'es')).forEach(n => fm.insertAdjacentHTML('beforeend', `<option value="${esc(n)}">${esc(n)}</option>`));
-  fc.value = state.cat; fco.value = state.comarca; fm.value = state.muni; $('#f-q').value = state.q;
+  fc.value = state.cat; fco.value = state.comarca; fm.value = state.muni; $('#f-q').value = state.q; $('#f-traf').checked = !!state.soloTraf;
   fc.onchange = () => { state.cat = fc.value; persist(); render(); };
   fco.onchange = () => { state.comarca = fco.value; persist(); render(); };
   fm.onchange = () => { state.muni = fm.value; persist(); render(); };
   $('#f-q').oninput = () => { state.q = $('#f-q').value; persist(); render(); };
+  $('#f-traf').onchange = () => { state.soloTraf = $('#f-traf').checked; persist(); render(); };
   document.querySelectorAll('.seg button').forEach(b => b.onclick = () => setView(b.dataset.v));
   $('#prev').onclick = () => { ym.m--; if(ym.m<0){ ym.m=11; ym.y--; } renderCal(); };
   $('#next').onclick = () => { ym.m++; if(ym.m>11){ ym.m=0; ym.y++; } renderCal(); };
@@ -283,7 +279,7 @@ function renderCal(){
   $('#mlabel').textContent = cap(first.toLocaleDateString('es-ES', { month:'long', year:'numeric' }));
   const cal = $('#cal'); cal.innerHTML = '';
   ['lun','mar','mié','jue','vie','sáb','dom'].forEach(d => cal.insertAdjacentHTML('beforeend', `<div class="dow">${d}</div>`));
-  let start = (first.getDay() + 6) % 7; // lunes = 0
+  let start = (first.getDay() + 6) % 7;
   const gridStart = new Date(ym.y, ym.m, 1 - start);
   const todayKey = dkey(new Date());
   const evs = EVENTOS.filter(pass);
@@ -306,14 +302,12 @@ function renderCal(){
     });
     if(list.length > 3){
       const m = document.createElement('div'); m.className = 'more'; m.textContent = `+${list.length - 3} más`;
-      m.onclick = () => { state.view='lista'; setView('lista'); };
+      m.onclick = () => setView('lista');
       cell.appendChild(m);
     }
     cal.appendChild(cell);
   }
-  if(!evs.length){
-    cal.insertAdjacentHTML('beforeend', `<div class="empty" style="grid-column:1/-1">No hay eventos que coincidan con el filtro.</div>`);
-  }
+  if(!evs.length) cal.insertAdjacentHTML('beforeend', `<div class="empty" style="grid-column:1/-1">No hay eventos que coincidan con el filtro.</div>`);
 }
 
 /* ---------- lista ---------- */
@@ -334,11 +328,13 @@ function renderList(){
     const past = (ev.fin||ev.inicio||'').slice(0,10) < todayKey;
     const card = document.createElement('div');
     card.className = 'card'; card.style.opacity = past ? .62 : 1;
+    const freeBadge = ev.entrada === 'gratuito' ? `<span class="badge free">Entrada libre</span>` :
+                      ev.entrada ? `<span class="badge paid">${esc(ENTRADAS[ev.entrada]||'Con entrada')}</span>` : '';
     card.innerHTML =
       `<div class="ico">${cm[1]}</div><div style="flex:1">` +
-      `<h3>${esc(ev.titulo)} <span class="badge ${ev.estado||'previsto'}">${ESTADOS[ev.estado]||'Previsto'}</span></h3>` +
+      `<h3>${esc(ev.titulo)} <span class="badge ${ev.estado||'previsto'}">${ESTADOS[ev.estado]||'Previsto'}</span> ${freeBadge} ${ev.afeccionTrafico?'<span class="badge traf">🚧 corte de tráfico</span>':''}</h3>` +
       `<div class="meta">${esc(fmtRange(ev))}</div>` +
-      `<div class="meta">${esc((ev.municipios||[]).join(' · ') || 'Sin municipios indicados')}</div>` +
+      `<div class="meta">${esc([ev.lugar, (ev.municipios||[]).join(' · ')].filter(Boolean).join(' — ') || 'Sin lugar indicado')}</div>` +
       `</div>`;
     card.onclick = () => openModal(ev);
     host.appendChild(card);
@@ -352,18 +348,45 @@ function openModal(ev){
   $('#d-title').textContent = ev.titulo;
   const body = $('#d-body');
   const tramos = (ev.tramos||[]).filter(t => t.via || t.municipio || t.corte);
+  const programa = (ev.programa||[]).filter(p => p.hora || p.actividad);
+  const hasPoint = ev.lat != null && ev.lng != null;
+  const showMap = tramos.some(t=>t.lat!=null) || (ev.recorrido||[]).length > 1 || hasPoint;
+  const badges = [
+    `<span class="badge ${ev.estado||'previsto'}">${ESTADOS[ev.estado]||'Previsto'}</span>`,
+    `<span class="badge">${esc(cm[0])}</span>`,
+    ev.ambito && ev.ambito!=='municipal' ? `<span class="badge">${esc(AMBITOS[ev.ambito]||'')}</span>` : '',
+    ev.entrada === 'gratuito' ? `<span class="badge free">Entrada libre</span>` : (ev.entrada ? `<span class="badge paid">${esc(ENTRADAS[ev.entrada])}</span>` : ''),
+    ev.afeccionTrafico ? `<span class="badge traf">🚧 Corte de tráfico</span>` : ''
+  ].filter(Boolean).join('');
+  const gmaps = hasPoint ? `https://www.google.com/maps/search/?api=1&query=${ev.lat},${ev.lng}` : '';
+
   body.innerHTML =
-    `<div class="kv"><span class="badge ${ev.estado||'previsto'}">${ESTADOS[ev.estado]||'Previsto'}</span> · ${esc(cm[0])}</div>` +
+    (ev.cartelUrl ? `<img class="cartel" src="${esc(ev.cartelUrl)}" alt="Cartel del evento" onerror="this.hidden=true">` : '') +
+    `<div class="badges">${badges}</div>` +
     `<div class="kv">🗓️ ${esc(fmtRange(ev))}</div>` +
-    (ev.municipios && ev.municipios.length ? `<div class="kv">📍 ${esc(ev.municipios.join(' · '))}</div>` : '') +
+    ((ev.lugar || (ev.municipios||[]).length) ? `<div class="kv">📍 <b>${esc(ev.lugar||'')}</b>${ev.lugar && (ev.municipios||[]).length ? ' · ' : ''}${esc((ev.municipios||[]).join(', '))}</div>` : '') +
+    (ev.direccion ? `<div class="kv">✉️ ${esc(ev.direccion)}</div>` : '') +
+    (gmaps ? `<div class="kv"><a class="ext" href="${gmaps}" target="_blank" rel="noopener">Cómo llegar (Google Maps)</a></div>` : '') +
+    (ev.publico ? `<div class="kv">👥 ${esc(ev.publico)}</div>` : '') +
     (ev.descripcion ? `<div class="desc">${esc(ev.descripcion)}</div>` : '') +
-    (ev.enlace ? `<div class="kv">🔗 <a class="ext" href="${esc(ev.enlace)}" target="_blank" rel="noopener">Más información</a></div>` : '') +
-    ((tramos.length || (ev.recorrido||[]).length > 1) ? `<div id="dmap"></div>` : '') +
+
+    (programa.length ? `<h4 class="blk">Programa</h4><table class="tr"><tbody>` +
+      programa.map(p => `<tr><td style="width:70px;white-space:nowrap">${esc(p.hora||'')}</td><td>${esc(p.actividad||'')}</td></tr>`).join('') + `</tbody></table>` : '') +
+
+    ((ev.organizador||ev.web||ev.telefono||ev.entradasUrl) ? `<h4 class="blk">Organización</h4>` : '') +
+    (ev.organizador ? `<div class="kv">Organiza: <b>${esc(ev.organizador)}</b></div>` : '') +
+    (ev.telefono ? `<div class="kv">☎️ ${esc(ev.telefono)}</div>` : '') +
+    (ev.web ? `<div class="kv">🔗 <a class="ext" href="${esc(ev.web)}" target="_blank" rel="noopener">Más información</a></div>` : '') +
+    (ev.entradasUrl ? `<div class="kv">🎟️ <a class="ext" href="${esc(ev.entradasUrl)}" target="_blank" rel="noopener">Entradas / inscripción</a></div>` : '') +
+    (ev.dispositivo ? `<div class="kv" style="margin-top:8px">🚑 <b>Dispositivo:</b> ${esc(ev.dispositivo)}</div>` : '') +
+
+    (ev.afeccionTrafico ? `<h4 class="blk">Afección al tráfico</h4>` : '') +
+    (showMap ? `<div id="dmap"></div>` : '') +
     (tramos.length ? `<table class="tr"><thead><tr><th>Vía / punto</th><th>Municipio</th><th>Corte</th><th>Reapertura</th><th>Nota</th></tr></thead><tbody>` +
       tramos.map(t => `<tr><td>${esc(t.via||'—')}</td><td>${esc(t.municipio||'—')}</td><td>${esc(t.corte||'—')}</td><td>${esc(t.reapertura||'—')}</td><td>${esc(t.nota||'')}</td></tr>`).join('') +
       `</tbody></table>` : '');
   $('#overlay').classList.add('show');
-  if(tramos.length || (ev.recorrido||[]).length > 1) setTimeout(() => drawDetailMap(ev, tramos), 60);
+  if(showMap) setTimeout(() => drawDetailMap(ev, tramos), 60);
 }
 function closeModal(){ $('#overlay').classList.remove('show'); if(dmap){ dmap.remove(); dmap = null; } }
 
@@ -373,6 +396,11 @@ function drawDetailMap(ev, tramos){
   dmap = L.map(el, { scrollWheelZoom:false }).setView(MALAGA_CENTER, 9);
   L.tileLayer('https://{s}.tile.openstreetmap.org/{z}/{x}/{y}.png', { maxZoom:19, attribution:'© OpenStreetMap' }).addTo(dmap);
   const pts = [];
+  if(ev.lat != null && ev.lng != null){
+    pts.push([ev.lat, ev.lng]);
+    L.circleMarker([ev.lat, ev.lng], { radius:10, color:'#16304f', fillColor:'#2a4a73', fillOpacity:.9, weight:2 })
+      .addTo(dmap).bindPopup(`<b>${esc(ev.lugar || ev.titulo)}</b>${ev.direccion ? '<br>' + esc(ev.direccion) : ''}`);
+  }
   tramos.forEach((t, i) => {
     if(t.lat == null || t.lng == null) return;
     pts.push([t.lat, t.lng]);
@@ -383,10 +411,10 @@ function drawDetailMap(ev, tramos){
     );
   });
   if((ev.recorrido||[]).length > 1){
-    const line = L.polyline(ev.recorrido, { color:'#2a4a73', weight:5, opacity:.8 }).addTo(dmap);
+    L.polyline(ev.recorrido, { color:'#2a4a73', weight:5, opacity:.8 }).addTo(dmap);
     ev.recorrido.forEach(p => pts.push(p));
   }
-  if(pts.length) dmap.fitBounds(pts, { padding:[30,30], maxZoom:14 });
+  if(pts.length) dmap.fitBounds(pts, { padding:[30,30], maxZoom:15 });
   setTimeout(() => dmap.invalidateSize(), 80);
 }
 </script>

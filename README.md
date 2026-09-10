@@ -1,7 +1,8 @@
-# Agenda viaria de Málaga — visor público
+# Agenda de eventos de Málaga — visor público
 
-Calendario **público y de solo lectura** de cortes de carretera, pruebas
-deportivas y eventos con afección al tráfico en la provincia de Málaga.
+Calendario **público y de solo lectura** de eventos de la provincia de Málaga:
+fiestas populares, música, ferias, romerías, cultura, deporte, actos
+institucionales y cortes de carretera / afección al tráfico.
 
 - **Este repositorio** = solo el visor. No contiene ningún enlace ni código del
   Portal 112 (app única). Desde aquí no se puede llegar a la zona de alta de datos.
@@ -10,96 +11,70 @@ deportivas y eventos con afección al tráfico en la provincia de Málaga.
 - **Backend compartido**: Firebase Realtime Database del proyecto `portal-112-b1754`,
   ruta `agenda/eventos`. Este visor solo lee esa ruta; escribir requiere sesión.
 
-## Puesta en marcha (una sola vez)
+## Reglas de Firebase (una sola vez)
 
-### 1. Crear el repositorio en GitHub
-
-```bash
-cd agenda-malaga
-git init -b main
-git add .
-git commit -m "Visor público de la agenda viaria de Málaga"
-gh repo create coordemergencias112-ux/agenda-malaga --public --source=. --push
-```
-
-(Si no usas `gh`: crea el repo vacío `agenda-malaga` en la organización
-`coordemergencias112-ux` desde la web y luego
-`git remote add origin https://github.com/coordemergencias112-ux/agenda-malaga.git && git push -u origin main`.)
-
-### 2. Activar GitHub Pages
-
-En el repo → **Settings → Pages → Build and deployment → Source: Deploy from a
-branch → `main` / `(root)`**. La URL pública queda en:
-
-```
-https://coordemergencias112-ux.github.io/agenda-malaga/
-```
-
-Ese es el enlace que se comparte.
-
-### 3. Abrir la lectura pública en Firebase
-
-En la consola de Firebase → **Realtime Database → Rules**, añade el bloque
-`agenda` **dentro** del objeto `rules` que ya tienes (sin tocar `turnos`,
-`guardia`, `panelControl`, etc.):
+En la consola de Firebase → **Realtime Database → Rules**, dentro del objeto
+`rules` que ya existe:
 
 ```json
-{
-  "rules": {
-
-    "agenda": {
-      "eventos": {
-        ".read": true,
-        ".write": "auth != null"
-      }
-    }
-
-    // ... resto de reglas existentes ...
+"agenda": {
+  "eventos": {
+    ".read": true,
+    ".write": "auth != null"
   }
 }
 ```
 
-- `.read: true` → cualquiera puede leer los eventos (es el objetivo).
-- `.write: "auth != null"` → solo se pueden crear/editar/borrar eventos con
-  sesión iniciada, es decir, desde el módulo del Portal.
-
-La `firebaseConfig` que aparece en `index.html` **no es un secreto**: está
-pensada para ir en código público. La seguridad real la ponen estas reglas.
+`.read: true` → cualquiera lee. `.write: "auth != null"` → solo con sesión.
+La `firebaseConfig` de `index.html` no es un secreto: la seguridad la ponen
+estas reglas.
 
 ## Estructura de un evento (`agenda/eventos/<id>`)
 
 ```jsonc
 {
-  "titulo": "La Vuelta 2026 — Etapa 8, paso por Málaga",
-  "categoria": "prueba_deportiva",      // ver lista en index.html
-  "estado": "previsto",                 // previsto | activo | finalizado | cancelado
-  "inicio": "2026-09-12T13:00",
-  "fin": "2026-09-12T17:30",
+  "titulo": "Feria de San Bernabé — Marbella",
+  "categoria": "feria",     // musica | festival | feria | romeria | cultural |
+                            // tradicion | gastronomico | deportivo |
+                            // prueba_deportiva | institucional | mercado |
+                            // obras | aviso | otro
+  "estado": "previsto",     // previsto | activo | finalizado | cancelado
+  "ambito": "municipal",    // municipal | comarcal | provincial
+  "inicio": "2026-06-07T12:00",
+  "fin": "2026-06-11T04:00",
+  "todoElDia": false,
+  "municipios": ["Marbella"],
+  "lugar": "Recinto ferial y casco antiguo",
+  "direccion": "Av. ...",
+  "lat": 36.51, "lng": -4.88,           // ubicación principal (opcional)
   "descripcion": "Texto para el público…",
-  "enlace": "https://…",                // opcional
-  "municipios": ["Antequera", "Málaga"],// se rellena solo con los tramos
-  "recorrido": [[36.9,-4.5],[36.8,-4.5]],// polilínea opcional del trazado
+  "programa": [ { "hora": "12:00", "actividad": "Pasacalles" } ],
+  "organizador": "Ayuntamiento de Marbella",
+  "web": "https://…",
+  "telefono": "…",
+  "entrada": "gratuito",                // gratuito | entrada | invitacion
+  "entradasUrl": "https://…",
+  "publico": "Todos los públicos",
+  "cartelUrl": "https://….jpg",
+  "afeccionTrafico": true,              // si true, se muestran tramos + recorrido
+  "dispositivo": "Protección Civil + Cruz Roja…",
+  "recorrido": [[36.9,-4.5],[36.8,-4.5]],
   "tramos": [
-    {
-      "via": "A-357",
-      "municipio": "Málaga",
-      "corte": "13:30",
-      "reapertura": "15:00",
-      "nota": "Desvío por MA-20",
-      "lat": 36.71, "lng": -4.47
-    }
+    { "via": "A-7", "municipio": "Marbella", "corte": "18:00",
+      "reapertura": "23:00", "nota": "Desvío por…", "lat": 36.5, "lng": -4.9 }
   ],
-  "actualizado": "2026-09-10T10:00:00.000Z",
+  "actualizado": "2026-05-01T10:00:00.000Z",
   "autor": "coord.emergencias.112@gmail.com"
 }
 ```
 
+Todos los campos salvo `titulo` e `inicio` son opcionales; el panel de alta
+guarda solo lo que se rellena.
+
 ## Local
 
-Es HTML estático; ábrelo con cualquier servidor local (necesita `http://`, no
-`file://`, por el módulo de Firebase):
+HTML estático; sírvelo por `http://` (el módulo de Firebase no funciona con `file://`):
 
 ```bash
 python -m http.server 8080
-# http://localhost:8080/
 ```
