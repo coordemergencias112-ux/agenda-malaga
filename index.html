@@ -1,0 +1,394 @@
+<!doctype html>
+<html lang="es">
+<head>
+<meta charset="utf-8">
+<meta name="viewport" content="width=device-width, initial-scale=1, viewport-fit=cover">
+<title>Agenda viaria de Málaga · cortes de carretera y eventos</title>
+<meta name="description" content="Calendario público de cortes de carretera, pruebas deportivas y eventos con afección al tráfico en la provincia de Málaga.">
+<meta name="theme-color" content="#16304f">
+<link rel="manifest" href="manifest.webmanifest">
+<link rel="stylesheet" href="https://unpkg.com/leaflet@1.9.4/dist/leaflet.css">
+<script defer src="https://unpkg.com/leaflet@1.9.4/dist/leaflet.js"></script>
+<style>
+  :root{
+    --ink:#101828; --ink-soft:#475467; --ink-faint:#8a94a3;
+    --paper:#f4f6f8; --surface:#ffffff; --surface-alt:#eef1f4;
+    --border:#d3d9e0; --accent:#2a4a73; --accent-strong:#16304f; --accent-soft:#e2e9f2;
+    --danger:#c8402f; --ok:#1f9d55; --warn:#c9820a;
+    --shadow: 0 1px 2px rgba(16,24,32,.05), 0 4px 12px rgba(16,24,32,.06);
+    --radius-lg:14px; --radius-md:10px; --radius-sm:7px;
+    --font-ui: -apple-system, "Segoe UI", Roboto, "Helvetica Neue", Arial, sans-serif;
+    --cat: var(--accent);
+  }
+  @media (prefers-color-scheme: dark){
+    :root:not([data-theme="light"]){
+      --ink:#eef1f4; --ink-soft:#aeb8c4; --ink-faint:#7c8798;
+      --paper:#0a0e14; --surface:#131922; --surface-alt:#1a212b;
+      --border:#28313d; --accent:#6f9bd1; --accent-strong:#9bc0e8; --accent-soft:#1b2938;
+      --danger:#e8695a; --ok:#4bbf82; --warn:#e3a83c;
+      --shadow: 0 1px 2px rgba(0,0,0,.3), 0 6px 16px rgba(0,0,0,.35);
+    }
+  }
+  *{box-sizing:border-box}
+  body{ margin:0; background:var(--paper); color:var(--ink); font-family:var(--font-ui); }
+  .wrap{ max-width:1080px; margin:0 auto; padding:20px 16px 60px; }
+  header.page{ text-align:center; margin-bottom:18px; }
+  header.page h1{ font-size:1.4rem; margin:0 0 4px; }
+  header.page p{ margin:0; color:var(--ink-soft); font-size:.9rem; }
+  .bar{
+    display:flex; flex-wrap:wrap; gap:10px; align-items:center; justify-content:center;
+    background:var(--surface); border:1px solid var(--border); border-radius:var(--radius-lg);
+    padding:12px 14px; box-shadow:var(--shadow); margin-bottom:16px;
+  }
+  .bar .seg{ display:flex; border:1px solid var(--border); border-radius:var(--radius-sm); overflow:hidden; }
+  .bar .seg button{ border:0; background:var(--surface); color:var(--ink-soft); padding:7px 14px; font-size:.85rem; cursor:pointer; font-family:inherit; }
+  .bar .seg button.on{ background:var(--accent-strong); color:#fff; }
+  .bar select, .bar input{
+    padding:7px 10px; border:1px solid var(--border); border-radius:var(--radius-sm);
+    background:var(--paper); color:var(--ink); font-size:.85rem; font-family:inherit; max-width:180px;
+  }
+  .navmonth{ display:flex; align-items:center; gap:12px; justify-content:center; margin-bottom:12px; }
+  .navmonth button{ border:1px solid var(--border); background:var(--surface); color:var(--ink); border-radius:var(--radius-sm); width:34px; height:34px; font-size:1rem; cursor:pointer; }
+  .navmonth h2{ font-size:1.05rem; margin:0; text-transform:capitalize; min-width:200px; text-align:center; }
+
+  .cal{ display:grid; grid-template-columns:repeat(7,1fr); gap:6px; }
+  .cal .dow{ font-size:.72rem; text-transform:uppercase; letter-spacing:.05em; color:var(--ink-faint); text-align:center; padding:4px 0; }
+  .cal .cell{
+    background:var(--surface); border:1px solid var(--border); border-radius:var(--radius-sm);
+    min-height:96px; padding:5px 5px 6px; display:flex; flex-direction:column; gap:3px;
+  }
+  .cal .cell.dim{ opacity:.4; }
+  .cal .cell .n{ font-size:.78rem; color:var(--ink-soft); font-weight:600; align-self:flex-end; }
+  .cal .cell.today .n{ background:var(--accent-strong); color:#fff; border-radius:999px; width:22px; height:22px; display:grid; place-items:center; }
+  .chip{
+    display:flex; align-items:center; gap:4px; font-size:.72rem; line-height:1.2;
+    background:var(--accent-soft); color:var(--ink); border-radius:5px; padding:3px 5px;
+    cursor:pointer; text-align:left; border:0; font-family:inherit; width:100%;
+    white-space:nowrap; overflow:hidden; text-overflow:ellipsis;
+  }
+  .chip.cancelado{ text-decoration:line-through; opacity:.6; }
+  .chip .b{ width:6px; height:6px; border-radius:50%; flex:none; }
+  .b.previsto{ background:#2f6fed; } .b.activo{ background:var(--warn); }
+  .b.finalizado{ background:var(--ink-faint); } .b.cancelado{ background:var(--danger); }
+  .more{ font-size:.7rem; color:var(--ink-faint); cursor:pointer; }
+  @media (max-width:640px){
+    .cal .cell{ min-height:64px; }
+    .chip span.tt{ display:none; }
+  }
+
+  .list .day{ font-size:.8rem; font-weight:700; color:var(--ink-soft); margin:18px 0 8px; text-transform:capitalize; }
+  .card{
+    background:var(--surface); border:1px solid var(--border); border-radius:var(--radius-md);
+    padding:12px 14px; box-shadow:var(--shadow); margin-bottom:8px; cursor:pointer;
+    display:flex; gap:12px; align-items:flex-start;
+  }
+  .card:hover{ border-color:var(--accent); }
+  .card .ico{ font-size:1.4rem; }
+  .card h3{ margin:0 0 3px; font-size:.98rem; }
+  .card .meta{ font-size:.8rem; color:var(--ink-soft); }
+  .badge{ font-size:.66rem; font-weight:700; border-radius:999px; padding:2px 8px; letter-spacing:.02em; border:1px solid var(--border); }
+  .badge.previsto{ color:#2f6fed; border-color:#2f6fed; }
+  .badge.activo{ color:var(--warn); border-color:var(--warn); }
+  .badge.finalizado{ color:var(--ink-faint); }
+  .badge.cancelado{ color:var(--danger); border-color:var(--danger); }
+
+  .empty{ text-align:center; color:var(--ink-faint); padding:50px 20px; }
+
+  .overlay{ position:fixed; inset:0; background:rgba(8,12,20,.55); display:none; align-items:flex-start; justify-content:center; padding:4vh 14px; z-index:1000; overflow:auto; }
+  .overlay.show{ display:flex; }
+  .modal{ background:var(--surface); border:1px solid var(--border); border-radius:var(--radius-lg); max-width:640px; width:100%; box-shadow:var(--shadow); }
+  .modal .mhead{ padding:16px 18px 10px; border-bottom:1px solid var(--border); display:flex; gap:10px; align-items:flex-start; }
+  .modal .mhead h2{ margin:0; font-size:1.1rem; flex:1; }
+  .modal .mhead button{ border:0; background:transparent; font-size:1.3rem; color:var(--ink-soft); cursor:pointer; line-height:1; }
+  .modal .mbody{ padding:14px 18px 20px; }
+  .modal .kv{ font-size:.85rem; color:var(--ink-soft); margin:2px 0; }
+  .modal .desc{ font-size:.9rem; margin:12px 0; white-space:pre-wrap; }
+  #dmap{ height:260px; border:1px solid var(--border); border-radius:var(--radius-md); margin:12px 0; }
+  table.tr{ width:100%; border-collapse:collapse; font-size:.82rem; margin-top:6px; }
+  table.tr th{ text-align:left; font-size:.7rem; text-transform:uppercase; letter-spacing:.04em; color:var(--ink-faint); padding:5px 6px; }
+  table.tr td{ padding:6px 6px; border-top:1px solid var(--border); }
+  a.ext{ color:var(--accent); font-size:.85rem; }
+  footer.page{ text-align:center; color:var(--ink-faint); font-size:.75rem; margin-top:40px; }
+</style>
+</head>
+<body>
+<div class="wrap">
+  <header class="page">
+    <h1>Agenda viaria de Málaga</h1>
+    <p>Cortes de carretera, pruebas deportivas y eventos con afección al tráfico en la provincia · <span id="updated">cargando…</span></p>
+  </header>
+
+  <div class="bar">
+    <div class="seg">
+      <button data-v="cal" class="on">Calendario</button>
+      <button data-v="lista">Lista</button>
+    </div>
+    <select id="f-cat"><option value="">Todas las categorías</option></select>
+    <select id="f-comarca"><option value="">Toda la provincia</option></select>
+    <select id="f-muni"><option value="">Todos los municipios</option></select>
+    <input id="f-q" type="search" placeholder="Buscar…">
+  </div>
+
+  <div id="view-cal">
+    <div class="navmonth">
+      <button id="prev" aria-label="Mes anterior">‹</button>
+      <h2 id="mlabel"></h2>
+      <button id="next" aria-label="Mes siguiente">›</button>
+    </div>
+    <div class="cal" id="cal"></div>
+  </div>
+
+  <div id="view-lista" class="list" hidden></div>
+
+  <footer class="page">
+    Coordinación de Emergencias 112 · Provincia de Málaga<br>
+    Información orientativa. Ante cualquier duda, consulte el bando municipal o el organismo responsable.
+  </footer>
+</div>
+
+<div class="overlay" id="overlay">
+  <div class="modal" role="dialog" aria-modal="true">
+    <div class="mhead">
+      <span id="d-ico" style="font-size:1.5rem"></span>
+      <h2 id="d-title"></h2>
+      <button id="d-close" aria-label="Cerrar">✕</button>
+    </div>
+    <div class="mbody" id="d-body"></div>
+  </div>
+</div>
+
+<script type="module">
+import { initializeApp } from "https://www.gstatic.com/firebasejs/10.13.2/firebase-app.js";
+import { getDatabase, ref, onValue } from "https://www.gstatic.com/firebasejs/10.13.2/firebase-database.js";
+
+/* Config pública del proyecto Portal 112 — NO es un secreto (va en código
+   público). La seguridad la ponen las Reglas de la base de datos: la ruta
+   agenda/eventos tiene lectura abierta (.read: true) y escritura solo con
+   sesión (.write: auth != null). Este visor solo lee. */
+const firebaseConfig = {
+  apiKey: "AIzaSyCzdrnL6qWbG9OHPiQV43mJvgH9i56PkVQ",
+  authDomain: "portal-112-b1754.firebaseapp.com",
+  databaseURL: "https://portal-112-b1754-default-rtdb.europe-west1.firebasedatabase.app",
+  projectId: "portal-112-b1754",
+  storageBucket: "portal-112-b1754.firebasestorage.app",
+  messagingSenderId: "84139749968",
+  appId: "1:84139749968:web:03fd5a508e32a5ebf25755"
+};
+const db = getDatabase(initializeApp(firebaseConfig));
+
+const MUNICIPIOS = [["Málaga","Área Metropolitana"],["Marbella","Costa del Sol Occidental"],["Estepona","Costa del Sol Occidental"],["Manilva","Costa del Sol Occidental"],["Casares","Costa del Sol Occidental"],["Benahavís","Costa del Sol Occidental"],["Ojén","Costa del Sol Occidental"],["Istán","Costa del Sol Occidental"],["Fuengirola","Costa del Sol Occidental"],["Mijas","Costa del Sol Occidental"],["Benalmádena","Costa del Sol Occidental"],["Torremolinos","Costa del Sol Occidental"],["Vélez-Málaga","Axarquía"],["Torrox","Axarquía"],["Nerja","Axarquía"],["Rincón de la Victoria","Axarquía"],["Algarrobo","Axarquía"],["Frigiliana","Axarquía"],["Cómpeta","Axarquía"],["Canillas de Albaida","Axarquía"],["Canillas de Aceituno","Axarquía"],["Alcaucín","Axarquía"],["La Viñuela","Axarquía"],["Periana","Axarquía"],["Riogordo","Axarquía"],["Alfarnate","Axarquía"],["Alfarnatejo","Axarquía"],["Colmenar","Axarquía"],["Comares","Axarquía"],["Almáchar","Axarquía"],["Benamargosa","Axarquía"],["Benamocarra","Axarquía"],["El Borge","Axarquía"],["Cútar","Axarquía"],["Iznate","Axarquía"],["Moclinejo","Axarquía"],["Salares","Axarquía"],["Sayalonga","Axarquía"],["Sedella","Axarquía"],["Árchez","Axarquía"],["Arenas","Axarquía"],["Totalán","Axarquía"],["Macharaviaya","Axarquía"],["Álora","Valle del Guadalhorce"],["Alhaurín de la Torre","Valle del Guadalhorce"],["Alhaurín el Grande","Valle del Guadalhorce"],["Almogía","Valle del Guadalhorce"],["Alozaina","Valle del Guadalhorce"],["Cártama","Valle del Guadalhorce"],["Casarabonela","Valle del Guadalhorce"],["Coín","Valle del Guadalhorce"],["Guaro","Valle del Guadalhorce"],["Monda","Valle del Guadalhorce"],["Pizarra","Valle del Guadalhorce"],["Carratraca","Valle del Guadalhorce"],["Casabermeja","Valle del Guadalhorce"],["Valle de Abdalajís","Valle del Guadalhorce"],["Tolox","Sierra de las Nieves"],["Yunquera","Sierra de las Nieves"],["El Burgo","Sierra de las Nieves"],["Parauta","Sierra de las Nieves"],["Ronda","Serranía de Ronda"],["Arriate","Serranía de Ronda"],["Benaoján","Serranía de Ronda"],["Montejaque","Serranía de Ronda"],["Cortes de la Frontera","Serranía de Ronda"],["Jimera de Líbar","Serranía de Ronda"],["Alpandeire","Serranía de Ronda"],["Algatocín","Serranía de Ronda"],["Atajate","Serranía de Ronda"],["Benadalid","Serranía de Ronda"],["Benalauría","Serranía de Ronda"],["Benarrabá","Serranía de Ronda"],["Cartajima","Serranía de Ronda"],["Faraján","Serranía de Ronda"],["Gaucín","Serranía de Ronda"],["Genalguacil","Serranía de Ronda"],["Igualeja","Serranía de Ronda"],["Jubrique","Serranía de Ronda"],["Júzcar","Serranía de Ronda"],["Pujerra","Serranía de Ronda"],["Montecorto","Serranía de Ronda"],["Serrato","Serranía de Ronda"],["Cuevas del Becerro","Serranía de Ronda"],["Campillos","Guadalteba"],["Ardales","Guadalteba"],["Teba","Guadalteba"],["Almargen","Guadalteba"],["Cañete la Real","Guadalteba"],["Sierra de Yeguas","Guadalteba"],["Antequera","Comarca de Antequera"],["Archidona","Comarca de Antequera"],["Cuevas Bajas","Comarca de Antequera"],["Cuevas de San Marcos","Comarca de Antequera"],["Fuente de Piedra","Comarca de Antequera"],["Humilladero","Comarca de Antequera"],["Mollina","Comarca de Antequera"],["Villanueva de Algaidas","Comarca de Antequera"],["Villanueva de la Concepción","Comarca de Antequera"],["Villanueva de Tapia","Comarca de Antequera"],["Villanueva del Rosario","Comarca de Antequera"],["Villanueva del Trabuco","Comarca de Antequera"],["Alameda","Comarca de Antequera"]];
+const COMARCA = {}; MUNICIPIOS.forEach(m => COMARCA[m[0]] = m[1]);
+const COMARCAS = [...new Set(MUNICIPIOS.map(m => m[1]))];
+
+const CATEGORIAS = {
+  prueba_deportiva:["Prueba deportiva","🚴"], obras:["Obras","🚧"], corte_programado:["Corte programado","⛔"],
+  acto_publico:["Acto público / feria","🎪"], procesion:["Procesión / cabalgata","✝️"],
+  manifestacion:["Manifestación","📣"], meteo:["Meteorología / incidencia","🌧️"], otro:["Otro","📌"]
+};
+const ESTADOS = { previsto:"Previsto", activo:"En curso", finalizado:"Finalizado", cancelado:"Cancelado" };
+const MALAGA_CENTER = [36.72, -4.55];
+
+const $ = (s, r) => (r||document).querySelector(s);
+const esc = s => (s==null?'':String(s)).replace(/[&<>"']/g, c => ({'&':'&amp;','<':'&lt;','>':'&gt;','"':'&quot;',"'":'&#39;'}[c]));
+const LS = 'agenda-malaga-v1';
+
+let EVENTOS = [];
+let dmap = null;
+const now = new Date();
+let ym = { y: now.getFullYear(), m: now.getMonth() };
+let state = { view:'cal', cat:'', comarca:'', muni:'', q:'' };
+try { Object.assign(state, JSON.parse(localStorage.getItem(LS)||'{}')); } catch(e){}
+function persist(){ try { localStorage.setItem(LS, JSON.stringify(state)); } catch(e){} }
+
+/* ---------- fechas ---------- */
+const dkey = d => `${d.getFullYear()}-${String(d.getMonth()+1).padStart(2,'0')}-${String(d.getDate()).padStart(2,'0')}`;
+function evDays(ev){ // set de 'YYYY-MM-DD' que ocupa el evento
+  const a = (ev.inicio||'').slice(0,10); if(!a) return [];
+  const b = (ev.fin||ev.inicio||'').slice(0,10) || a;
+  const out = []; let d = new Date(a+'T00:00'), end = new Date(b+'T00:00');
+  if(isNaN(d)) return [];
+  let guard = 0;
+  while(d <= end && guard++ < 400){ out.push(dkey(d)); d.setDate(d.getDate()+1); }
+  return out;
+}
+function fmtRange(ev){
+  const di = ev.inicio ? new Date(ev.inicio) : null;
+  const df = ev.fin ? new Date(ev.fin) : null;
+  if(!di) return '';
+  const optD = { weekday:'long', day:'numeric', month:'long' };
+  const optT = { hour:'2-digit', minute:'2-digit' };
+  const sameDay = df && di.toDateString() === df.toDateString();
+  if(!df) return cap(di.toLocaleDateString('es-ES', optD)) + ' · ' + di.toLocaleTimeString('es-ES', optT);
+  if(sameDay) return cap(di.toLocaleDateString('es-ES', optD)) + ' · ' + di.toLocaleTimeString('es-ES', optT) + '–' + df.toLocaleTimeString('es-ES', optT);
+  return cap(di.toLocaleDateString('es-ES', optD)) + ' → ' + cap(df.toLocaleDateString('es-ES', optD));
+}
+const cap = s => s.charAt(0).toUpperCase() + s.slice(1);
+
+/* ---------- filtros ---------- */
+function pass(ev){
+  if(state.cat && ev.categoria !== state.cat) return false;
+  const munis = ev.municipios || [];
+  if(state.comarca && !munis.some(m => COMARCA[m] === state.comarca)) return false;
+  if(state.muni && !munis.includes(state.muni)) return false;
+  if(state.q){
+    const hay = (ev.titulo+' '+(ev.descripcion||'')+' '+munis.join(' ')+' '+(ev.tramos||[]).map(t=>t.via+' '+t.municipio).join(' ')).toLowerCase();
+    if(!hay.includes(state.q.toLowerCase())) return false;
+  }
+  return true;
+}
+
+/* ---------- carga ---------- */
+onValue(ref(db, 'agenda/eventos'), snap => {
+  const val = snap.val() || {};
+  EVENTOS = Object.keys(val).map(k => ({ ...val[k], id:k })).filter(e => e.titulo);
+  const last = EVENTOS.reduce((m,e) => e.actualizado && e.actualizado > m ? e.actualizado : m, '');
+  $('#updated').textContent = last ? 'actualizado ' + new Date(last).toLocaleDateString('es-ES',{day:'numeric',month:'short',hour:'2-digit',minute:'2-digit'}) : 'sin eventos aún';
+  render();
+}, err => { $('#updated').textContent = 'no se pudo cargar la agenda'; });
+
+/* ---------- controles ---------- */
+(function initControls(){
+  const fc = $('#f-cat');
+  Object.keys(CATEGORIAS).forEach(k => fc.insertAdjacentHTML('beforeend', `<option value="${k}">${CATEGORIAS[k][1]} ${CATEGORIAS[k][0]}</option>`));
+  const fco = $('#f-comarca');
+  COMARCAS.forEach(c => fco.insertAdjacentHTML('beforeend', `<option value="${esc(c)}">${esc(c)}</option>`));
+  const fm = $('#f-muni');
+  MUNICIPIOS.map(m=>m[0]).sort((a,b)=>a.localeCompare(b,'es')).forEach(n => fm.insertAdjacentHTML('beforeend', `<option value="${esc(n)}">${esc(n)}</option>`));
+  fc.value = state.cat; fco.value = state.comarca; fm.value = state.muni; $('#f-q').value = state.q;
+  fc.onchange = () => { state.cat = fc.value; persist(); render(); };
+  fco.onchange = () => { state.comarca = fco.value; persist(); render(); };
+  fm.onchange = () => { state.muni = fm.value; persist(); render(); };
+  $('#f-q').oninput = () => { state.q = $('#f-q').value; persist(); render(); };
+  document.querySelectorAll('.seg button').forEach(b => b.onclick = () => setView(b.dataset.v));
+  $('#prev').onclick = () => { ym.m--; if(ym.m<0){ ym.m=11; ym.y--; } renderCal(); };
+  $('#next').onclick = () => { ym.m++; if(ym.m>11){ ym.m=0; ym.y++; } renderCal(); };
+  $('#d-close').onclick = closeModal;
+  $('#overlay').onclick = e => { if(e.target === $('#overlay')) closeModal(); };
+  document.addEventListener('keydown', e => { if(e.key === 'Escape') closeModal(); });
+  setView(state.view);
+})();
+
+function setView(v){
+  state.view = v; persist();
+  document.querySelectorAll('.seg button').forEach(b => b.classList.toggle('on', b.dataset.v === v));
+  $('#view-cal').hidden = v !== 'cal';
+  $('#view-lista').hidden = v !== 'lista';
+  render();
+}
+function render(){ state.view === 'cal' ? renderCal() : renderList(); }
+
+/* ---------- calendario ---------- */
+function renderCal(){
+  const first = new Date(ym.y, ym.m, 1);
+  $('#mlabel').textContent = cap(first.toLocaleDateString('es-ES', { month:'long', year:'numeric' }));
+  const cal = $('#cal'); cal.innerHTML = '';
+  ['lun','mar','mié','jue','vie','sáb','dom'].forEach(d => cal.insertAdjacentHTML('beforeend', `<div class="dow">${d}</div>`));
+  let start = (first.getDay() + 6) % 7; // lunes = 0
+  const gridStart = new Date(ym.y, ym.m, 1 - start);
+  const todayKey = dkey(new Date());
+  const evs = EVENTOS.filter(pass);
+  const byDay = {};
+  evs.forEach(ev => evDays(ev).forEach(k => (byDay[k] = byDay[k] || []).push(ev)));
+  for(let i = 0; i < 42; i++){
+    const d = new Date(gridStart); d.setDate(gridStart.getDate() + i);
+    const k = dkey(d), inMonth = d.getMonth() === ym.m;
+    const cell = document.createElement('div');
+    cell.className = 'cell' + (inMonth ? '' : ' dim') + (k === todayKey ? ' today' : '');
+    cell.innerHTML = `<span class="n">${d.getDate()}</span>`;
+    const list = (byDay[k] || []).slice().sort((a,b) => (a.inicio||'').localeCompare(b.inicio||''));
+    list.slice(0, 3).forEach(ev => {
+      const cm = CATEGORIAS[ev.categoria] || CATEGORIAS.otro;
+      const b = document.createElement('button');
+      b.className = 'chip ' + (ev.estado||'previsto');
+      b.innerHTML = `<span class="b ${ev.estado||'previsto'}"></span>${cm[1]}<span class="tt">&nbsp;${esc(ev.titulo)}</span>`;
+      b.onclick = () => openModal(ev);
+      cell.appendChild(b);
+    });
+    if(list.length > 3){
+      const m = document.createElement('div'); m.className = 'more'; m.textContent = `+${list.length - 3} más`;
+      m.onclick = () => { state.view='lista'; setView('lista'); };
+      cell.appendChild(m);
+    }
+    cal.appendChild(cell);
+  }
+  if(!evs.length){
+    cal.insertAdjacentHTML('beforeend', `<div class="empty" style="grid-column:1/-1">No hay eventos que coincidan con el filtro.</div>`);
+  }
+}
+
+/* ---------- lista ---------- */
+function renderList(){
+  const host = $('#view-lista'); host.innerHTML = '';
+  const evs = EVENTOS.filter(pass).slice().sort((a,b) => (a.inicio||'').localeCompare(b.inicio||''));
+  if(!evs.length){ host.innerHTML = `<div class="empty">No hay eventos que coincidan con el filtro.</div>`; return; }
+  const todayKey = dkey(new Date());
+  let lastDay = null;
+  evs.forEach(ev => {
+    const dk = (ev.inicio||'').slice(0,10);
+    if(dk !== lastDay){
+      lastDay = dk;
+      const d = new Date(ev.inicio);
+      host.insertAdjacentHTML('beforeend', `<div class="day">${isNaN(d)?'':cap(d.toLocaleDateString('es-ES',{weekday:'long',day:'numeric',month:'long',year:'numeric'}))}</div>`);
+    }
+    const cm = CATEGORIAS[ev.categoria] || CATEGORIAS.otro;
+    const past = (ev.fin||ev.inicio||'').slice(0,10) < todayKey;
+    const card = document.createElement('div');
+    card.className = 'card'; card.style.opacity = past ? .62 : 1;
+    card.innerHTML =
+      `<div class="ico">${cm[1]}</div><div style="flex:1">` +
+      `<h3>${esc(ev.titulo)} <span class="badge ${ev.estado||'previsto'}">${ESTADOS[ev.estado]||'Previsto'}</span></h3>` +
+      `<div class="meta">${esc(fmtRange(ev))}</div>` +
+      `<div class="meta">${esc((ev.municipios||[]).join(' · ') || 'Sin municipios indicados')}</div>` +
+      `</div>`;
+    card.onclick = () => openModal(ev);
+    host.appendChild(card);
+  });
+}
+
+/* ---------- ficha ---------- */
+function openModal(ev){
+  const cm = CATEGORIAS[ev.categoria] || CATEGORIAS.otro;
+  $('#d-ico').textContent = cm[1];
+  $('#d-title').textContent = ev.titulo;
+  const body = $('#d-body');
+  const tramos = (ev.tramos||[]).filter(t => t.via || t.municipio || t.corte);
+  body.innerHTML =
+    `<div class="kv"><span class="badge ${ev.estado||'previsto'}">${ESTADOS[ev.estado]||'Previsto'}</span> · ${esc(cm[0])}</div>` +
+    `<div class="kv">🗓️ ${esc(fmtRange(ev))}</div>` +
+    (ev.municipios && ev.municipios.length ? `<div class="kv">📍 ${esc(ev.municipios.join(' · '))}</div>` : '') +
+    (ev.descripcion ? `<div class="desc">${esc(ev.descripcion)}</div>` : '') +
+    (ev.enlace ? `<div class="kv">🔗 <a class="ext" href="${esc(ev.enlace)}" target="_blank" rel="noopener">Más información</a></div>` : '') +
+    ((tramos.length || (ev.recorrido||[]).length > 1) ? `<div id="dmap"></div>` : '') +
+    (tramos.length ? `<table class="tr"><thead><tr><th>Vía / punto</th><th>Municipio</th><th>Corte</th><th>Reapertura</th><th>Nota</th></tr></thead><tbody>` +
+      tramos.map(t => `<tr><td>${esc(t.via||'—')}</td><td>${esc(t.municipio||'—')}</td><td>${esc(t.corte||'—')}</td><td>${esc(t.reapertura||'—')}</td><td>${esc(t.nota||'')}</td></tr>`).join('') +
+      `</tbody></table>` : '');
+  $('#overlay').classList.add('show');
+  if(tramos.length || (ev.recorrido||[]).length > 1) setTimeout(() => drawDetailMap(ev, tramos), 60);
+}
+function closeModal(){ $('#overlay').classList.remove('show'); if(dmap){ dmap.remove(); dmap = null; } }
+
+function drawDetailMap(ev, tramos){
+  const el = $('#dmap'); if(!el || typeof L === 'undefined') return;
+  if(dmap){ dmap.remove(); dmap = null; }
+  dmap = L.map(el, { scrollWheelZoom:false }).setView(MALAGA_CENTER, 9);
+  L.tileLayer('https://{s}.tile.openstreetmap.org/{z}/{x}/{y}.png', { maxZoom:19, attribution:'© OpenStreetMap' }).addTo(dmap);
+  const pts = [];
+  tramos.forEach((t, i) => {
+    if(t.lat == null || t.lng == null) return;
+    pts.push([t.lat, t.lng]);
+    L.marker([t.lat, t.lng]).addTo(dmap).bindPopup(
+      `<b>${esc(t.via||'Tramo '+(i+1))}</b><br>${esc(t.municipio||'')}` +
+      (t.corte ? `<br>Corte: ${esc(t.corte)}${t.reapertura ? ' · Reapertura: ' + esc(t.reapertura) : ''}` : '') +
+      (t.nota ? `<br><i>${esc(t.nota)}</i>` : '')
+    );
+  });
+  if((ev.recorrido||[]).length > 1){
+    const line = L.polyline(ev.recorrido, { color:'#2a4a73', weight:5, opacity:.8 }).addTo(dmap);
+    ev.recorrido.forEach(p => pts.push(p));
+  }
+  if(pts.length) dmap.fitBounds(pts, { padding:[30,30], maxZoom:14 });
+  setTimeout(() => dmap.invalidateSize(), 80);
+}
+</script>
+</body>
+</html>
