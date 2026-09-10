@@ -194,17 +194,19 @@ function persist(){ try { localStorage.setItem(LS, JSON.stringify(state)); } cat
 const dkey = d => `${d.getFullYear()}-${String(d.getMonth()+1).padStart(2,'0')}-${String(d.getDate()).padStart(2,'0')}`;
 function evDays(ev){
   const a = (ev.inicio||'').slice(0,10); if(!a) return [];
-  const b = (ev.fin||ev.inicio||'').slice(0,10) || a;
+  let b = (ev.fin||'').slice(0,10);
+  if(!b || b < a) b = a;   // fin ausente o anterior al inicio -> evento de un solo día
   const out = []; let d = new Date(a+'T00:00'), end = new Date(b+'T00:00');
   if(isNaN(d)) return [];
   let guard = 0;
   while(d <= end && guard++ < 400){ out.push(dkey(d)); d.setDate(d.getDate()+1); }
-  return out;
+  return out.length ? out : [a];
 }
 const cap = s => s.charAt(0).toUpperCase() + s.slice(1);
 function fmtRange(ev){
   const di = ev.inicio ? new Date(ev.inicio) : null;
-  const df = ev.fin ? new Date(ev.fin) : null;
+  let df = ev.fin ? new Date(ev.fin) : null;
+  if(df && di && df < di) df = null;   // fin inválido (anterior al inicio): se ignora
   if(!di) return '';
   const optD = { weekday:'long', day:'numeric', month:'long' };
   const optT = { hour:'2-digit', minute:'2-digit' };
@@ -332,7 +334,7 @@ function renderList(){
                       ev.entrada ? `<span class="badge paid">${esc(ENTRADAS[ev.entrada]||'Con entrada')}</span>` : '';
     card.innerHTML =
       `<div class="ico">${cm[1]}</div><div style="flex:1">` +
-      `<h3>${esc(ev.titulo)} <span class="badge ${ev.estado||'previsto'}">${ESTADOS[ev.estado]||'Previsto'}</span> ${freeBadge} ${ev.afeccionTrafico?'<span class="badge traf">🚧 corte de tráfico</span>':''}</h3>` +
+      `<h3>${esc(ev.titulo)} <span class="badge ${ev.estado||'previsto'}">${ESTADOS[ev.estado]||'Previsto'}</span> ${freeBadge} ${ev.afeccionTrafico?'<span class="badge traf">🚧 corte de tráfico</span>':''} ${(ev.documentos||[]).length?'<span class="badge">📄 '+ev.documentos.length+'</span>':''}</h3>` +
       `<div class="meta">${esc(fmtRange(ev))}</div>` +
       `<div class="meta">${esc([ev.lugar, (ev.municipios||[]).join(' · ')].filter(Boolean).join(' — ') || 'Sin lugar indicado')}</div>` +
       `</div>`;
@@ -384,7 +386,10 @@ function openModal(ev){
     (showMap ? `<div id="dmap"></div>` : '') +
     (tramos.length ? `<table class="tr"><thead><tr><th>Vía / punto</th><th>Municipio</th><th>Corte</th><th>Reapertura</th><th>Nota</th></tr></thead><tbody>` +
       tramos.map(t => `<tr><td>${esc(t.via||'—')}</td><td>${esc(t.municipio||'—')}</td><td>${esc(t.corte||'—')}</td><td>${esc(t.reapertura||'—')}</td><td>${esc(t.nota||'')}</td></tr>`).join('') +
-      `</tbody></table>` : '');
+      `</tbody></table>` : '') +
+
+    ((ev.documentos||[]).length ? `<h4 class="blk">Documentos</h4>` +
+      ev.documentos.map(d => `<div class="kv">📄 <a class="ext" href="${esc(d.url)}" target="_blank" rel="noopener">${esc(d.nombre||'documento.pdf')}</a></div>`).join('') : '');
   $('#overlay').classList.add('show');
   if(showMap) setTimeout(() => drawDetailMap(ev, tramos), 60);
 }

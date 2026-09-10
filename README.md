@@ -29,6 +29,30 @@ En la consola de Firebase → **Realtime Database → Rules**, dentro del objeto
 La `firebaseConfig` de `index.html` no es un secreto: la seguridad la ponen
 estas reglas.
 
+### Storage (para los PDF adjuntos)
+
+Los documentos PDF de cada evento se guardan en **Firebase Storage**. Una sola vez:
+
+1. Consola de Firebase → **Storage** → si no está activado, **Comenzar** y elegir
+   ubicación (recomendado `europe-west`, igual que la base de datos).
+2. Pestaña **Rules** de Storage → pega:
+
+```
+rules_version = '2';
+service firebase.storage {
+  match /b/{bucket}/o {
+    match /agenda/{allPaths=**} {
+      allow read: if true;                    // descarga pública
+      allow write: if request.auth != null;   // subida solo con sesión
+    }
+  }
+}
+```
+
+Los PDF se borran solos: el panel de alta, al abrirse (y con el botón 🧹 Limpiar),
+elimina de Storage los documentos de eventos cuyo último día ya ha pasado. El
+evento se conserva como histórico; solo desaparecen sus adjuntos.
+
 ## Estructura de un evento (`agenda/eventos/<id>`)
 
 ```jsonc
@@ -62,6 +86,10 @@ estas reglas.
   "tramos": [
     { "via": "A-7", "municipio": "Marbella", "corte": "18:00",
       "reapertura": "23:00", "nota": "Desvío por…", "lat": 36.5, "lng": -4.9 }
+  ],
+  "documentos": [
+    { "nombre": "Bando.pdf", "url": "https://firebasestorage.../…",
+      "path": "agenda/<id>/…_Bando.pdf", "size": 123456, "subido": "2026-05-01T…" }
   ],
   "actualizado": "2026-05-01T10:00:00.000Z",
   "autor": "coord.emergencias.112@gmail.com"
